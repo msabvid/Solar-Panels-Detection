@@ -316,7 +316,7 @@ def predict(val_loader, model):
             probs_image = probs[j,:,:,:]
             name = img_id[j]
             tiff.imsave('images/prediction/pred_'+name+'.png', pred_image)     
-            tiff.imsave('images/pix_probabilities/probs_'+name+'.png', pred_image)     
+            tiff.imsave('images/pix_probabilities/probs_'+name+'.png', probs_image)     
 
  
 
