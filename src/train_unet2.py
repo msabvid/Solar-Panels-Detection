@@ -295,9 +295,10 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
 
 def predict(val_loader, model):
-    checkpoint = torch.load('model_bes_long2.pth.tar')
+    checkpoint = torch.load('best_old_models/SGD/model_bes_long2.pth.tar')
     model.load_state_dict(checkpoint['state_dict']) 
     model.eval()
+    sm = nn.Softmax()
     for i, (img_id, input, target) in enumerate(val_loader):
         target = target.cuda(async=True)
         input = input.cuda(async=True)
@@ -306,11 +307,12 @@ def predict(val_loader, model):
         target_var = target_var.view(batch_size, -1)
         target_var = target_var.view(-1).contiguous()
         output = model(input_var)
-        prec1, recall1  = accuracy(output.data, target, topk=(1,1))
-        probs, pred = output.topk(1,1,True,True)
+        prec1, recall1, F1  = accuracy(output.data, target, topk=(1,1))
+        _, pred = output.topk(1,1,True,True)
+        probs = sm(output)
         height, width = (input.size()[2], input.size()[3]) 
         pred = pred.view(batch_size,1,height,width).data.cpu().numpy()
-        probs = probs.view(batch_size,1,height,width).data.cpu().numpy()
+        probs = probs[:,1].contiguous().view(batch_size,1,height,width).data.cpu().numpy()
         for j in range(len(img_id)):
             pred_image = pred[j,:,:,:]
             probs_image = probs[j,:,:,:]
