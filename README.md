@@ -1,2 +1,2 @@
 # Solar-Panels-Detection
-Detection of Solar
+Detection of Solar Panels
