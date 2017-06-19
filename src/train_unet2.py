@@ -164,7 +164,7 @@ class Unet2(nn.Module):
 
 def main():
     global args, best_prec1
-    
+    best_F1 = 0
     
 
     model = Unet2()
@@ -201,9 +201,10 @@ def main():
 
     criterion = nn.CrossEntropyLoss(weight=weights).cuda()
 
-    optimizer = torch.optim.SGD(model.parameters(), lr,
-                                momentum=momentum,
-                                weight_decay=weight_decay)
+    #optimizer = torch.optim.SGD(model.parameters(), lr,
+    #                            momentum=momentum,
+    #                            weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(0, epochs):
         print('epoch={}'.format(epoch))
@@ -219,10 +220,10 @@ def main():
     
         # remember best prec and save checkpoint to see when there starts to be overfitting every 5 epochs
         if epoch%5 == 0:
-            prec1 = validate(val_loader, model, criterion)
-            is_best = prec1>best_prec1
-            best_prec1 = max(prec1, best_prec1)
-            save_checkpoint({'epoch':epoch+1, 'state_dict':model.state_dict(), 'best_prec1':best_prec1}, is_best)                        
+            F1 = validate(val_loader, model, criterion)
+            is_best = F1>best_F1
+            best_F1 = max(F1, best_F1)
+            save_checkpoint({'epoch':epoch+1, 'state_dict':model.state_dict(), 'best_F1':best_F1}, is_best)                        
 
 
     predict(val_loader, model, criterion)
@@ -235,6 +236,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
+    F_score = AverageMeter()
     #top5 = AverageMeter()
 
     # switch to train mode
@@ -262,11 +264,11 @@ def train(train_loader, model, criterion, optimizer, epoch):
         print('loss')
         loss = criterion(output, target_var)
         # measure accuracy and record loss
-        prec1, recall1 = accuracy(output.data, target, topk=(1, 1))
+        prec1, recall1, F1 = accuracy(output.data, target, topk=(1, 1))
 
         losses.update(loss.data[0], input.size(0))
         top1.update(prec1, input.size(0))   # input.size(0) = nbatches
-
+        F_score.update(F1, input.size(0))   # input.size(0) = nbatches
         # compute gradient and do SGD step
         optimizer.zero_grad()
         print('backward propagation')
@@ -322,6 +324,7 @@ def validate(val_loader, model, criterion):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
+    F_score = AverageMeter()
     #top5 = AverageMeter()
 
     # switch to evaluate mode
@@ -339,9 +342,10 @@ def validate(val_loader, model, criterion):
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
-        prec1, recall1  = accuracy(output.data, target, topk=(1,1))
+        prec1, recall1, F1  = accuracy(output.data, target, topk=(1,1))
         losses.update(loss.data[0], input.size(0))
         top1.update(prec1, input.size(0))
+        F_score.update(F1, input.size(0))
         count_test = count_test+1
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -357,7 +361,7 @@ def validate(val_loader, model, criterion):
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
 
-    return top1.avg
+    return F_score.avg
 
 
 def create_image_windows(img_id, input, target):
@@ -447,7 +451,7 @@ def accuracy(output, target, topk=(1,)):
     except:
         F1 = np.nan       
     print('TP: {}, FP: {}, P: {}, precision: {}, recall: {}, F1-score: {}, correct_p: {}'.format(TP, FP, P, precision, recall, F1, correct_p.sum()))
-    return(precision, recall)
+    return(precision, recall, F1)
     
 
 
