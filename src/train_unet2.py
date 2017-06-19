@@ -41,7 +41,7 @@ epochs=500
 batch_size = 5 
 
 #base_lr = 0.0015
-base_lr = 0.02
+base_lr = 0.001
 momentum = 0.9
 #weight_decay = 1e-4
 weight_decay = 5e-4
@@ -188,7 +188,7 @@ def main():
     
     # define loss function (criterion) and pptimizer
     weights = np.array([8.4,1.6])
-
+    weights = np.array([9.0,1.0])
     weights
     weights = 1/weights
     print(weights)
@@ -204,14 +204,15 @@ def main():
     #optimizer = torch.optim.SGD(model.parameters(), lr,
     #                            momentum=momentum,
     #                            weight_decay=weight_decay)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=weight_decay)
+    #optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, weight_decay=weight_decay,
+    #                                momentum=momentum)
     for epoch in range(0, epochs):
         print('epoch={}'.format(epoch))
 
         #adjust_learning_rate(optimizer, epoch), divide it by 2 every 10 epochs
         # adjust learning rate
-        lr = base_lr * (0.5 ** (epoch // 10))
+        lr = base_lr * (0.5 ** (epoch // 20))
         for param_group in optimizer.state_dict()['param_groups']:
             param_group['lr'] = lr
 
@@ -362,18 +363,6 @@ def validate(val_loader, model, criterion):
           .format(top1=top1))
 
     return F_score.avg
-
-
-def create_image_windows(img_id, input, target):
-    n_rows = target.size()[1] // 256
-    n_cols = target.size()[2] // 256
-    
-    for k in range(len(img_id)):
-                 
-
-
-
-
 
 
 
