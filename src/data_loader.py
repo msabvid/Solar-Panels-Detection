@@ -38,6 +38,80 @@ def make_dataset(dir, dir_output,text_file):
         return images[:900]
 
 
+def make_dataset_from_big_image(dir_subimages, filename):
+    """
+    This function does the following:
+        1) crops big images into subimages of 256x256,
+        2) saves subimages in dir_subimages
+        3) creates the images_csv list with the path of the subimages
+    
+    Input:
+    -----
+        dir_subimages: path to save images
+        filename: path+filename of the big image
+    
+    Output:
+    ------
+        images_csv: list of the subimages paths
+        
+    """
+
+    image = imread(filename)
+    img_id = os.path.splitext(os.path.basename(filename))[0]
+    height, width = image.shape[:2]
+    n_rows, n_cols = height//256, width//256
+    images_csv= []
+    for i in range(n_rows):
+        for j in range(n_cols):
+            cropped = image[i*256:(i*256)+256, j*256:(j*256)+256, :]
+            cropped_id = img_id + '_'+str(i)+'_'+str(j) + '.tif' 
+            # save image
+            tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
+            # write in csv file image path
+            images_csv.append(os.path.join(dir_subimages, cropped_id))
+            
+        if n_cols*256 < width:
+            cropped = image[i*256:(i*256)+256, width-256:width,:]
+            cropped_id = img_id + '_'+str(i)+'_'+str(j+1)
+            # save image
+            tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
+            # write in csv file image path
+            images_csv.append(os.path.join(dir_subimages, cropped_id))
+            
+            
+    if n_rows*256 < height:
+        for j in range(n_cols):
+            cropped = image[height-256:height, j*256:(j*256)+256, :]
+            cropped_id = img_id + '_'+str(i+1)+'_'+str(j) 
+            # save image
+            tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
+            # write in csv file image path
+            images_csv.append(os.path.join(dir_subimages, cropped_id))
+
+            
+        if n_cols*256 < width:
+            cropped = image[height-256:height, width-256:width,:]
+            cropped_id = img_id + '_'+str(i+1)+'_'+str(j+1)
+            # save image
+            tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
+            # write in csv file image path
+            images_csv.append(os.path.join(dir_subimages, cropped_id))
+    
+    if len(images_csv)%5 > 0:
+        for i in range(5-(len(images_csv)%5)):
+            images_csv.append(images_csv[-1])
+            
+    return images_csv
+
+
+
+
+
+
+
+
+
+
 def default_loader(path):
     return imread(path)
     #return(Image.open(path))
@@ -98,5 +172,32 @@ class ImagerLoader(data.Dataset):
         return len(self.imgs)
 
 
+class ImageLoaderPredictionBigImage(data.Dataset):
+    def __init__(self, dir_subimages, filename, normalize = False):
+
+        imgs = make_dataset_from_big_image()
+
+        self.imgs = imgs
+        self.dir_subimages = dir_subimages
+        self.filename = filename
+        self.loader = loader
+        self.normalize = normalize
+    
+    def __getitem__(self, index):
+        path = self.imgs[index]
+        img = self.loader(path)
+        img = img.astype('int16')
+        img = np.transpose(img, (2,0,1))
+        
+        if self.normalize:
+            img = img.astype(float)
+            img = (img-128)/128.
+        
+        img = torch.FloatTensor(img)
+        img_id = os.path.basename(path).split('.')[0]
+        return img_id, img
+
+    def __len__(self):
+        return len(self.imgs)
 
 

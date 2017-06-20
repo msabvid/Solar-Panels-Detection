@@ -320,6 +320,31 @@ def predict(val_loader, model):
             tiff.imsave('images/prediction/pred_'+name+'.png', pred_image)     
             tiff.imsave('images/pix_probabilities/probs_'+name+'.png', probs_image)     
 
+
+def predict_big_image(model, filename):
+    val_loader = torch.utils.data.DataLoader(
+        ImageLoaderPredictionBigImage(data_path,filename, normalize=True),
+        batch_size=batch_size, shuffle=False,
+        num_workers=workers, pin_memory=True)#True) 
+    checkpoint = torch.load('best_old_models/SGD/model_bes_long2.pth.tar')
+    model.load_state_dict(checkpoint['state_dict'])
+    model.eval()
+    sm = nn.Softmax()
+    for i, (img_id, input) in enumerate(val_loader):
+        input = input.cuda(async=True)
+        input_var = torch.autograd.Variable(input, volatile=True)
+        output = model(input_var)
+        _, pred = output.topk(1,1,True, True)
+        probs = sm(output)
+        height, width = (input.size()[2], input.size()[3])
+        pred = pred.view(batch_size, 1, height, width).data.cpu().numpy()
+        probs = probs[:,1].contiguous().view(batch_size,1,height,width).data.cpu().numpy()
+        for j in range(len(img_id)):
+            pred_image = pred[j,:,:,:]
+            probs_image = probs[j,:,:,:]
+            name = img_id[j]
+            tiff.imsave('images/prediction_big_images/pred_'+name+'.png', pred_image)
+            tiff.imsave('images/pix_probabilites_big_images/probs_'+name+'.png', probs_image)
  
 
 def validate(val_loader, model, criterion):
