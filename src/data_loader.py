@@ -106,7 +106,54 @@ def make_dataset_from_big_image(dir_subimages, filename):
 
 
 
-
+def reconstruct_image(dir_subimages, filename):
+    """
+    Input:
+    -----
+        dir_subimages: path of the subimages
+        filename: path+filename of the big original image
+    
+    Output:
+    ------
+        reconstructed image
+        
+    """
+    original_image = tiff.imread(filename)
+    height, width = original_image.shape[:2]
+    n_rows, n_cols = height//256, width//256
+    
+    #subimages = [os.path.splitext(os.path.basename(x))[0] for x in glob(os.path.join(dir_subimages, '*.png'))]
+    img_id = os.path.splitext(os.path.basename(filename))[0]
+    img_rows = []
+    
+    for i in range(n_rows):
+        for j in range(n_cols):
+            img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i)+'_'+str(j)+'.png'))
+            if (j == 0):
+                img_row = img
+            else:
+                img_row = np.concatenate([img_row, img], axis = 1)
+        if n_cols*256 < width:
+            img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i)+'_'+str(j+1)+'.png'))
+            img = img[:,-width%256:]
+            img_row = np.concatenate([img_row, img], axis = 1)
+        img_rows.append(img_row)
+    if n_rows*256 < height:
+        for j in range(n_cols):
+            img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i+1)+'_'+str(j)+'.png'))
+            img = img[-height%256:,:]
+            if (j == 0):
+                img_row = img
+            else:
+                img_row = np.concatenate([img_row, img], axis = 1)
+        if n_cols*256 < width:
+            img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i+1)+'_'+str(j+1)+'.png'))
+            img = img[-height%256:,-width%256:]
+            img_row = np.concatenate([img_row, img], axis = 1)            
+        img_rows.append(img_row)
+    
+    reconstruction = np.concatenate(img_rows, axis=0)
+    return reconstruction
 
 
 
@@ -173,7 +220,7 @@ class ImagerLoader(data.Dataset):
 
 
 class ImageLoaderPredictionBigImage(data.Dataset):
-    def __init__(self, dir_subimages, filename, normalize = False):
+    def __init__(self, dir_subimages, filename, normalize = False, loader=default_loader):
 
         imgs = make_dataset_from_big_image()
 

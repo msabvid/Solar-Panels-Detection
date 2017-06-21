@@ -27,7 +27,8 @@ CLASSES = {1 : 'Solar Panel'}
 os.chdir('/floydhub/CityFinancial/Solar-Panels-Detection/data/California')
 
 output_path = 'images/label_cropped256/'  # labels path
-data_path = 'images/images_cropped256/'   # folder path
+data_path = 'images/images_cropped256/'   # input images path
+dir_subimages = 'images/subimages/'
 
 train_path = 'images/train_cropped256.csv'   # in each column: "image_name;image_label_name"
 test_path = 'images/test_cropped256.csv'     # in each column: "image_name;image_label_name"
@@ -323,7 +324,7 @@ def predict(val_loader, model):
 
 def predict_big_image(model, filename):
     val_loader = torch.utils.data.DataLoader(
-        ImageLoaderPredictionBigImage(data_path,filename, normalize=True),
+        ImageLoaderPredictionBigImage(dir_subimages,filename, normalize=True),
         batch_size=batch_size, shuffle=False,
         num_workers=workers, pin_memory=True)#True) 
     checkpoint = torch.load('best_old_models/SGD/model_bes_long2.pth.tar')
@@ -343,8 +344,15 @@ def predict_big_image(model, filename):
             pred_image = pred[j,:,:,:]
             probs_image = probs[j,:,:,:]
             name = img_id[j]
-            tiff.imsave('images/prediction_big_images/pred_'+name+'.png', pred_image)
-            tiff.imsave('images/pix_probabilites_big_images/probs_'+name+'.png', probs_image)
+            tiff.imsave('images/prediction_big_images/'+name+'.png', pred_image)
+            tiff.imsave('images/pix_probabilites_big_images/'+name+'.png', probs_image)
+        
+    reconstructed_prediction = reconstruct_image('images/prediction_big_images', filename)
+    reconstructed_probabilities = reconstruct_image('images/pix_probabilities_big_images', filename)
+    name_original_image = os.path.splitext(os.path.basename(filename))[0]
+    tiff.imsave('images/prediction_big_images/'+name_original_image+'.png', reconstructed_prediction)
+    tiff.imsave('images/pix_probabilities_big_images/'+name)original_image+'.png',reconstructed_probabilities)
+    return 'sucess'
  
 
 def validate(val_loader, model, criterion):
