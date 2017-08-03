@@ -10,6 +10,7 @@ import torch
 import numpy as np
 import cv2
 import random
+import tifffile as tiff
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -72,7 +73,7 @@ def make_dataset_from_big_image(dir_subimages, filename):
             
         if n_cols*256 < width:
             cropped = image[i*256:(i*256)+256, width-256:width,:]
-            cropped_id = img_id + '_'+str(i)+'_'+str(j+1)
+            cropped_id = img_id + '_'+str(i)+'_'+str(j+1)+'.tif'
             # save image
             tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
             # write in csv file image path
@@ -82,7 +83,7 @@ def make_dataset_from_big_image(dir_subimages, filename):
     if n_rows*256 < height:
         for j in range(n_cols):
             cropped = image[height-256:height, j*256:(j*256)+256, :]
-            cropped_id = img_id + '_'+str(i+1)+'_'+str(j) 
+            cropped_id = img_id + '_'+str(i+1)+'_'+str(j)+'.tif' 
             # save image
             tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
             # write in csv file image path
@@ -91,7 +92,7 @@ def make_dataset_from_big_image(dir_subimages, filename):
             
         if n_cols*256 < width:
             cropped = image[height-256:height, width-256:width,:]
-            cropped_id = img_id + '_'+str(i+1)+'_'+str(j+1)
+            cropped_id = img_id + '_'+str(i+1)+'_'+str(j+1)+'.tif'
             # save image
             tiff.imsave(os.path.join(dir_subimages, cropped_id), cropped)
             # write in csv file image path
@@ -132,27 +133,27 @@ def reconstruct_image(dir_subimages, filename):
             if (j == 0):
                 img_row = img
             else:
-                img_row = np.concatenate([img_row, img], axis = 1)
+                img_row = np.concatenate([img_row, img], axis = 2)
         if n_cols*256 < width:
             img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i)+'_'+str(j+1)+'.png'))
-            img = img[:,-width%256:]
-            img_row = np.concatenate([img_row, img], axis = 1)
+            img = img[:,:,-width%256:]
+            img_row = np.concatenate([img_row, img], axis = 2)
         img_rows.append(img_row)
     if n_rows*256 < height:
         for j in range(n_cols):
             img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i+1)+'_'+str(j)+'.png'))
-            img = img[-height%256:,:]
+            img = img[:,-height%256:,:]
             if (j == 0):
                 img_row = img
             else:
-                img_row = np.concatenate([img_row, img], axis = 1)
+                img_row = np.concatenate([img_row, img], axis = 2)
         if n_cols*256 < width:
             img = tiff.imread(os.path.join(dir_subimages, img_id+'_'+str(i+1)+'_'+str(j+1)+'.png'))
-            img = img[-height%256:,-width%256:]
-            img_row = np.concatenate([img_row, img], axis = 1)            
+            img = img[:,-height%256:,-width%256:]
+            img_row = np.concatenate([img_row, img], axis = 2)            
         img_rows.append(img_row)
     
-    reconstruction = np.concatenate(img_rows, axis=0)
+    reconstruction = np.concatenate(img_rows, axis=1)
     return reconstruction
 
 
@@ -222,7 +223,7 @@ class ImagerLoader(data.Dataset):
 class ImageLoaderPredictionBigImage(data.Dataset):
     def __init__(self, dir_subimages, filename, normalize = False, loader=default_loader):
 
-        imgs = make_dataset_from_big_image()
+        imgs = make_dataset_from_big_image(dir_subimages, filename)
 
         self.imgs = imgs
         self.dir_subimages = dir_subimages

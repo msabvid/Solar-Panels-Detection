@@ -345,13 +345,13 @@ def predict_big_image(model, filename):
             probs_image = probs[j,:,:,:]
             name = img_id[j]
             tiff.imsave('images/prediction_big_images/'+name+'.png', pred_image)
-            tiff.imsave('images/pix_probabilites_big_images/'+name+'.png', probs_image)
+            tiff.imsave('images/pix_probabilities_big_images/'+name+'.png', probs_image)
         
     reconstructed_prediction = reconstruct_image('images/prediction_big_images', filename)
     reconstructed_probabilities = reconstruct_image('images/pix_probabilities_big_images', filename)
     name_original_image = os.path.splitext(os.path.basename(filename))[0]
-    tiff.imsave('images/prediction_big_images/'+name_original_image+'.png', reconstructed_prediction)
-    tiff.imsave('images/pix_probabilities_big_images/'+name)original_image+'.png',reconstructed_probabilities)
+    tiff.imsave('images/prediction_big_images/'+name_original_image+'.png', reconstructed_prediction.astype('uint8'))
+    tiff.imsave('images/pix_probabilities_big_images/'+name_original_image+'.png',reconstructed_probabilities)
     return 'sucess'
  
 
