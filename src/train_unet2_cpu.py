@@ -24,7 +24,7 @@ import tifffile as tiff
 
 
 CLASSES = {1 : 'Solar Panel'}
-os.chdir('/floydhub/CityFinancial/Solar-Panels-Detection/data/California')
+os.chdir('/lustre/home/ec002/msabate/Solar-Panels-Detection/data/California')
 
 output_path = 'images/label_cropped256/'  # labels path
 data_path = 'images/images_cropped256/'   # input images path
@@ -52,7 +52,7 @@ best_prec1 = 0
 lr = base_lr
 count_test = 0
 count = 0
-
+torch.set_num_threads(36)
 
 my_transform = transforms.Compose([
     transforms.Scale(256)])#,
@@ -178,13 +178,13 @@ def main():
         ImagerLoader(data_path,output_path,train_path, my_transform, crop=False,
                      normalize=True, size_cropped=256),
         batch_size=batch_size, shuffle=True,
-        num_workers=workers, pin_memory=True)#True)
+        num_workers=workers)#, pin_memory=True)#True)
 
     val_loader = torch.utils.data.DataLoader(
         ImagerLoader(data_path,output_path,test_path, my_transform, crop=False,
                      normalize=True, size_cropped=256),
         batch_size=batch_size, shuffle=False,
-        num_workers=workers, pin_memory=True)#True)
+        num_workers=workers)#, pin_memory=True)#True)
 
     
     # define loss function (criterion) and pptimizer
