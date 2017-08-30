@@ -24,7 +24,7 @@ import tifffile as tiff
 
 
 parser = argparse.ArgumentParser(description='PyTorch Unet2 Training')
-parser.add_argument('--nodes', deault=2, type = int, help = 'Number of nodes')
+parser.add_argument('--nodes', default=2, type = int, help = 'Number of nodes')
 args = parser.parse_args()
 
 
