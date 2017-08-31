@@ -13,6 +13,7 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
+import torch.distributed as dist
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
