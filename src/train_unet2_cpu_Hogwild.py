@@ -46,7 +46,7 @@ torch.set_num_threads(4)
 
 workers = 2
 #epochs = 900
-epochs=500
+epochs=100
 batch_size = 5 
 
 #base_lr = 0.0015
