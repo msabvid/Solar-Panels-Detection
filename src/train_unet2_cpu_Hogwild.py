@@ -50,7 +50,7 @@ epochs=100
 batch_size = 5 
 
 #base_lr = 0.0015
-base_lr = 0.001
+base_lr = 0.02
 momentum = 0.9
 #weight_decay = 1e-4
 weight_decay = 5e-4
@@ -60,7 +60,7 @@ best_prec1 = 0
 lr = base_lr
 count_test = 0
 count = 0
-torch.set_num_threads(36)
+torch.set_num_threads(16)
 
 my_transform = transforms.Compose([
     transforms.Scale(256)])#,
@@ -191,7 +191,7 @@ def train(rank, model):
     
     # define loss function (criterion) and pptimizer
     weights = np.array([8.4,1.6])
-    weights = np.array([9.0,1.0])
+    # weights = np.array([9.0,1.0])
     weights
     weights = 1/weights
     print(weights)
@@ -213,7 +213,7 @@ def train(rank, model):
         
         #adjust_learning_rate(optimizer, epoch), divide it by 2 every 10 epochs
         # adjust learning rate
-        lr = base_lr * (0.5 ** (epoch // 20))
+        lr = base_lr * (0.5 ** (epoch // 10))
         for param_group in optimizer.state_dict()['param_groups']:
             param_group['lr'] = lr
 
