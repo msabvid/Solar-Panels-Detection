@@ -207,9 +207,7 @@ def train(rank, model):
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001,
                                 momentum=momentum,
                                 weight_decay=weight_decay)
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=weight_decay)
-    #optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, weight_decay=weight_decay,
-    #                                momentum=momentum)
+
     for epoch in range(0, epochs):
         print('epoch={}'.format(epoch))
         
@@ -236,11 +234,11 @@ def train(rank, model):
 
 def train_epoch(train_loader, model, criterion, optimizer, epoch):
 #    global count
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
-    losses = AverageMeter()
-    top1 = AverageMeter()
-    F_score = AverageMeter()
+#    batch_time = AverageMeter()
+#    data_time = AverageMeter()
+#    losses = AverageMeter()
+#    top1 = AverageMeter()
+#    F_score = AverageMeter()
     #top5 = AverageMeter()
 
     # switch to train mode
@@ -252,7 +250,7 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
         print('num of threads = {}'.format(torch.get_num_threads()))
         # measure data loading time
         
-        data_time.update(time.time() - end)
+        data_time = time.time() - end
         #input = input.cuda(async=True)
         #target = target.cuda(async=True)
         input_var = torch.autograd.Variable(input)
@@ -271,9 +269,9 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
         # measure accuracy and record loss
         prec1, recall1, F1 = accuracy(output.data, target, topk=(1, 1))
 
-        losses.update(loss.data[0], input.size(0))
-        top1.update(prec1, input.size(0))   # input.size(0) = nbatches
-        F_score.update(F1, input.size(0))   # input.size(0) = nbatches
+#        losses.update(loss.data[0], input.size(0))
+#        top1.update(prec1, input.size(0))   # input.size(0) = nbatches
+#        F_score.update(F1, input.size(0))   # input.size(0) = nbatches
         # compute gradient and do SGD step
         optimizer.zero_grad()
         print('backward propagation')
@@ -282,16 +280,19 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
         optimizer.step()
 
         # measure elapsed time
-        batch_time.update(time.time() - end)
+        batch_time = time.time() - end
         end = time.time()
         count = count+1
         print('pid: {} \t Epoch: [{}][{}/{}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'.format(pid, 
+                  'Time {batch_time:.3f} \t'
+                  'Data {data_time:.3f} \t'
+                  'Loss {loss:.4f} \t'
+                  'Prec@1 {prec1:.3f} \t'
+                  'recall {recall1:.3f} \t'
+                  'F1: {F1:.3f}'.format(pid, 
                    epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, top1=top1))
+                   data_time=data_time, loss=loss.data[0], prec1=prec1, 
+                   recall1 = recall1, F1=F1))
 
         #return(model)
 
