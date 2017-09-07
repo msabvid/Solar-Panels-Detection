@@ -1,0 +1,11 @@
+#!/bin/bash --login
+#PBS -l place=excl
+#PBS -N unet2_Hogwild
+#PBS -l select=1:ncpus=36
+#PBS -l walltime=00:20:00
+#PBS -A ec002
+
+cd /lustre/home/ec002/msabate/Solar-Panels-Detection/src
+module load anaconda/python3
+source activate wolf
+OMP_NUM_THREADS=16 python train_unet2_cpu_Hogwild.py 
