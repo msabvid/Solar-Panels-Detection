@@ -25,7 +25,7 @@ import tifffile as tiff
 
 
 parser = argparse.ArgumentParser(description='PyTorch Unet2 Training')
-parser.add_argument('--num-processes', default=4, type = int, 
+parser.add_argument('--num-processes', default=4, type = int, action='store', 
                     help = 'How maby training processes to use (default: 4)')
 args = parser.parse_args()
 
@@ -46,7 +46,7 @@ torch.set_num_threads(4)
 
 workers = 2
 #epochs = 900
-epochs=100
+epochs=1
 batch_size = 5 
 
 #base_lr = 0.0015
@@ -240,10 +240,11 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
 #    top1 = AverageMeter()
 #    F_score = AverageMeter()
     #top5 = AverageMeter()
-
+    print('train_epoch!')
     # switch to train mode
     model.train()
     pid = os.getpid()
+    print('pid = ', pid)
     end = time.time()
     for i, (img_id, input, target) in enumerate(train_loader):
         print('i={}'.format(i))
@@ -282,17 +283,18 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
         # measure elapsed time
         batch_time = time.time() - end
         end = time.time()
-        count = count+1
-        print('pid: {} \t Epoch: [{}][{}/{}]\t'
-                  'Time {batch_time:.3f} \t'
-                  'Data {data_time:.3f} \t'
-                  'Loss {loss:.4f} \t'
-                  'Prec@1 {prec1:.3f} \t'
-                  'recall {recall1:.3f} \t'
-                  'F1: {F1:.3f}'.format(pid, 
-                   epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=loss.data[0], prec1=prec1, 
-                   recall1 = recall1, F1=F1))
+        # count = count+1
+        with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild.txt','a') as f:
+            f.write('pid: {} \t Epoch: [{}][{}/{}]\t'
+                      'Time {batch_time:.3f} \t'
+                      'Data {data_time:.3f} \t'
+                      'Loss {loss:.4f} \t'
+                      'Prec@1 {prec1:.3f} \t'
+                      'recall {recall1:.3f} \t'
+                      'F1: {F1:.3f} \n'.format(pid, 
+                       epoch, i, len(train_loader), batch_time=batch_time,
+                       data_time=data_time, loss=loss.data[0], prec1=prec1, 
+                       recall1 = recall1, F1=F1))
 
         #return(model)
 
@@ -478,7 +480,8 @@ def accuracy(output, target, topk=(1,)):
         F1 = 2/(1/precision + 1/recall)
     except:
         F1 = np.nan       
-    print('TP: {}, FP: {}, P: {}, precision: {}, recall: {}, F1-score: {}, correct_p: {}'.format(TP, FP, P, precision, recall, F1, correct_p.sum()))
+    with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild.txt', 'a') as f:
+        f.write('TP: {}, FP: {}, P: {}, precision: {}, recall: {}, F1-score: {}, correct_p: {} \n'.format(TP, FP, P, precision, recall, F1, correct_p.sum()))
     return(precision, recall, F1)
     
 
@@ -512,4 +515,3 @@ if __name__ == '__main__':
         processes.append(p)
     for p in processes:
         p.join()
-    main()
