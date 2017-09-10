@@ -26,7 +26,11 @@ import tifffile as tiff
 
 parser = argparse.ArgumentParser(description='PyTorch Unet2 Training')
 parser.add_argument('--num-processes', default=4, type = int, action='store', 
-                    help = 'How maby training processes to use (default: 4)')
+                    help = 'How many training processes to use (default: 4)')
+parser.add_argument('--num-threads', default=9, type = int, action = 'store',
+                    help = 'How many threads to use per process for OpenBlas multiplications')
+parser.add_argument('--num-epochs', default=1, type = int, acition = 'store',
+                    help = 'Num of epochs per process (default: 20)')
 args = parser.parse_args()
 
 
@@ -42,11 +46,11 @@ train_path = 'images/train_cropped256.csv'   # in each column: "image_name;image
 test_path = 'images/test_cropped256.csv'     # in each column: "image_name;image_label_name"
 
 
-torch.set_num_threads(4)
+
 
 workers = 2
 #epochs = 900
-epochs=1
+epochs=args.num_epochs
 batch_size = 5 
 
 #base_lr = 0.0015
@@ -60,7 +64,8 @@ best_prec1 = 0
 lr = base_lr
 count_test = 0
 count = 0
-torch.set_num_threads(16)
+
+torch.set_num_threads(args.num_threads)
 
 my_transform = transforms.Compose([
     transforms.Scale(256)])#,
@@ -121,54 +126,32 @@ class Unet2(nn.Module):
         self.last = nn.Conv2d(32,2,kernel_size=1)
 
     def forward(self, x):
-        #print('x size is {}'.format(x.size()))
         d1 = self.D1(x)
-        #print('d1 size is {0}'.format(d1.size()))
-        #print('d1 torch element_size is {}'.format(d1.element_size()))
         d1_pool = nn.MaxPool2d(kernel_size=2, stride=2)(d1)
-        #print('d1_pool size is {}'.format(d1_pool.size()))
         d2 = self.D2(d1_pool)
-        #print('d2 size is {}'.format(d2.size()))
         d2_pool = nn.MaxPool2d(kernel_size=2, stride=2)(d2)
-        #print('d2_pool size is {}'.format(d2_pool.size()))
         d3 = self.D3(d2_pool)
-        #print('d3 size is {}'.format(d3.size()))
         d3_pool = nn.MaxPool2d(kernel_size=2, stride=2)(d3)
-        #print('d3_pool size is {}'.format(d3_pool.size()))
         d4 = self.D4(d3_pool)
-        #print('d4 size is {}'.format(d4.size()))
         d4_pool = nn.MaxPool2d(kernel_size=2, stride=2)(d4)
-        #print('d4_pool size is {}'.format(d4_pool.size()))
+
         b = self.B(d4_pool)
-        #print('b size is {}'.format(b.size()))
+
         u4_input = self.U4_input(b)
-        #print('u4_input size is {}'.format(u4_input.size()))
         u4_input = u4_input.contiguous()
-        #print('hola')
         u4 = self.U4(torch.cat((d4,u4_input),1))
-        #print('u4 size is {}'.format(u4.size()))
         u3_input = self.U3_input(u4)
-        #print('u3_input size is {}'.format(u3_input.size()))
         u3 = self.U3(torch.cat((d3,u3_input),1))
-        #print('u3 size is {}'.format(u3.size()))
         u3 = u3.contiguous()
         u2_input = self.U2_input(u3)
-        #print('u2_input size is {}'.format(u2_input.size()))
         u2 = self.U2(torch.cat((d2,u2_input),1))
-        #print('u2 size is {}'.format(u2.size()))
         u1_input = self.U1_input(u2)
         u1_input = u1_input.contiguous()
-        #print('u1_input size is {}'.format(u1_input.size()))
         u1 = self.U1(torch.cat((d1,u1_input),1))
         y = self.last(u1)
-        #print('y size is {}'.format(y.size()))
-        #print('y element_size is {}'.format(y.element_size()))
         y = y.view(batch_size,2,-1).contiguous()
-        #print('y size is {}'.format(y.size()))
         y = y.transpose(1,2).contiguous()
-        #print('y size is {}'.format(y.size()))
         y = y.view(-1,2).contiguous()
-        #print('y size is {}'.format(y.size()))
         return y
 
 def train(rank, model):
@@ -192,7 +175,6 @@ def train(rank, model):
     # define loss function (criterion) and pptimizer
     weights = np.array([8.4,1.6])
     # weights = np.array([9.0,1.0])
-    weights
     weights = 1/weights
     print(weights)
     
@@ -220,31 +202,21 @@ def train(rank, model):
         # train for one epoch
         train_epoch(train_loader, model, criterion, optimizer, epoch)
     
-        # remember best prec and save checkpoint to see when there starts to be overfitting every 5 epochs
-    #    if epoch%5 == 0:
-    #        F1 = validate(val_loader, model, criterion)
-    #        is_best = F1>best_F1
-    #        best_F1 = max(F1, best_F1)
-    #        save_checkpoint({'epoch':epoch+1, 'state_dict':model.state_dict(), 'best_F1':best_F1}, is_best)                        
-
 
     #predict(val_loader, model, criterion)
     print('training finished')
     
 
 def train_epoch(train_loader, model, criterion, optimizer, epoch):
-#    global count
-#    batch_time = AverageMeter()
-#    data_time = AverageMeter()
-#    losses = AverageMeter()
-#    top1 = AverageMeter()
-#    F_score = AverageMeter()
-    #top5 = AverageMeter()
+
     print('train_epoch!')
+
     # switch to train mode
     model.train()
+
     pid = os.getpid()
     print('pid = ', pid)
+
     end = time.time()
     for i, (img_id, input, target) in enumerate(train_loader):
         print('i={}'.format(i))
@@ -284,7 +256,7 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
         batch_time = time.time() - end
         end = time.time()
         # count = count+1
-        with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild.txt','a') as f:
+        with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild_'+str(args.num_processes) + 'p.txt','a') as f:
             f.write('pid: {} \t Epoch: [{}][{}/{}]\t'
                       'Time {batch_time:.3f} \t'
                       'Data {data_time:.3f} \t'
@@ -503,15 +475,17 @@ def accuracy2(output, target, topk=(1,)):
 
 
 if __name__ == '__main__':
-    print('hola')
+
     model = Unet2()
     model.share_memory() # gradients are allocated lazily, so they are not shared here.
     torch.manual_seed(1010) # we will change the seed for the random sampler in each process
     processes = []
-    
+    init_time = time.time()
     for rank in range(args.num_processes):
         p = mp.Process(target=train, args=(rank, model))
         p.start()
         processes.append(p)
     for p in processes:
         p.join()
+    print('Success! TRAINING OF {} per process TOOK {train_time: .3f}'.format(epochs, 
+          train_time=time.time()-init_time))
