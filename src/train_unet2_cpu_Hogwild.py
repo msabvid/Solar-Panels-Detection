@@ -20,7 +20,7 @@ import torchvision.models as models
 #from data_loader import ImagerLoader
 from data_loader import *
 import numpy as np
-from dill.source import getsource
+#from dill.source import getsource
 import tifffile as tiff
 
 
@@ -29,7 +29,7 @@ parser.add_argument('--num-processes', default=4, type = int, action='store',
                     help = 'How many training processes to use (default: 4)')
 parser.add_argument('--num-threads', default=9, type = int, action = 'store',
                     help = 'How many threads to use per process for OpenBlas multiplications')
-parser.add_argument('--num-epochs', default=1, type = int, acition = 'store',
+parser.add_argument('--num-epochs', default=1, type = int, action = 'store',
                     help = 'Num of epochs per process (default: 20)')
 args = parser.parse_args()
 
@@ -154,7 +154,7 @@ class Unet2(nn.Module):
         y = y.view(-1,2).contiguous()
         return y
 
-def train(rank, model):
+def train(rank, model, init_time):
     
     torch.manual_seed(1010 + rank)
 
@@ -200,14 +200,14 @@ def train(rank, model):
             param_group['lr'] = lr
 
         # train for one epoch
-        train_epoch(train_loader, model, criterion, optimizer, epoch)
+        train_epoch(train_loader, model, criterion, optimizer, epoch, init_time)
     
 
     #predict(val_loader, model, criterion)
     print('training finished')
     
 
-def train_epoch(train_loader, model, criterion, optimizer, epoch):
+def train_epoch(train_loader, model, criterion, optimizer, epoch, init_time):
 
     print('train_epoch!')
 
@@ -254,18 +254,20 @@ def train_epoch(train_loader, model, criterion, optimizer, epoch):
 
         # measure elapsed time
         batch_time = time.time() - end
+        total_time = time.time() - init_time
         end = time.time()
         # count = count+1
-        with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild_'+str(args.num_processes) + 'p.txt','a') as f:
-            f.write('pid: {} \t Epoch: [{}][{}/{}]\t'
+        with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/data/working/output_Hogwild_'+str(args.num_processes) + 'p.txt','a') as f:
+            f.write('pid: {} \t num of threads: {} \t Epoch: [{}/{}][{}/{}]\t'
                       'Time {batch_time:.3f} \t'
+                      'Tot time {total_time:.3f}\t'
                       'Data {data_time:.3f} \t'
                       'Loss {loss:.4f} \t'
                       'Prec@1 {prec1:.3f} \t'
                       'recall {recall1:.3f} \t'
-                      'F1: {F1:.3f} \n'.format(pid, 
-                       epoch, i, len(train_loader), batch_time=batch_time,
-                       data_time=data_time, loss=loss.data[0], prec1=prec1, 
+                      'F1: {F1:.3f} \n'.format(pid,torch.get_num_threads(), 
+                       epoch,epochs, i, len(train_loader), batch_time=batch_time,
+                       total_time = total_time, data_time=data_time, loss=loss.data[0], prec1=prec1, 
                        recall1 = recall1, F1=F1))
 
         #return(model)
@@ -452,7 +454,7 @@ def accuracy(output, target, topk=(1,)):
         F1 = 2/(1/precision + 1/recall)
     except:
         F1 = np.nan       
-    with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild.txt', 'a') as f:
+    with open('/lustre/home/ec002/msabate/Solar-Panels-Detection/output_Hogwild_'+str(args.num_processes) + 'p.txt','a') as f:
         f.write('TP: {}, FP: {}, P: {}, precision: {}, recall: {}, F1-score: {}, correct_p: {} \n'.format(TP, FP, P, precision, recall, F1, correct_p.sum()))
     return(precision, recall, F1)
     
@@ -482,7 +484,7 @@ if __name__ == '__main__':
     processes = []
     init_time = time.time()
     for rank in range(args.num_processes):
-        p = mp.Process(target=train, args=(rank, model))
+        p = mp.Process(target=train, args=(rank, model, init_time))
         p.start()
         processes.append(p)
     for p in processes:
