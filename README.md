@@ -9,3 +9,9 @@
 * _src/train_unet2.py_: training of U-Net
 * _src/train_unet2_cpu_Hogwild.py_: distributed training of U-Net in one node of a cluster, doing asynchrnous update of model parameters
 * _src/train_unet2_cpu_mpi.py_: distributed training of U-Net in several nodes of a cluster using mpi4py
+* _src/osm.py_*: rasterisaton of OpenStreetMaps data to create training sets for other detection problems
+
+## Data
+* Solar panels locations in aerial images of four cities in California: https://figshare.com/articles/Distributed_Solar_Photovoltaic_Array_Location_and_Extent_Data_Set_for_Remote_Sensing_Object_Identification/3385780
+* Sentinel-2 images https://scihub.copernicus.eu
+* OpenStreetMaps: shapefiles of different geographical features from Scotland: http://download.geofabrik.de/europe/great-britain.html
