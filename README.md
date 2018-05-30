@@ -18,9 +18,20 @@
 * OpenStreetMaps: shapefiles of different geographical features from Scotland: http://download.geofabrik.de/europe/great-britain.html
 
 ## Results
-
 ### True Positives examples
 ![TP1](/images/TP1.png)
 ![TP2](/images/TP2.png)
 ![TP3](/images/TP3.png)
 ![TP4](/images/TP4.png)
+
+### False Positives Examples
+![FP1](/images/FP1.png)
+![FP2](/images/FP2.png)
+
+### Sentinel-2 land monitoring training set creation
+- Sentinel-2 image of Edinburgh area
+![Sentinel2](/images/Sentinel_edi.png)
+- Mask image with white pixels at forests location
+![forest](/images/edi_forest.png)
+- Mask image with white pixels at roads location
+![roads](/images/edi_roads.png)
