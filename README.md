@@ -19,6 +19,7 @@
 
 ## Results
 ### True Positives examples
+- Left: Original image. Center: U-Net output. Right: Solar panels delimited using U-Net output
 ![TP1](/images/TP1.png)
 ![TP2](/images/TP2.png)
 ![TP3](/images/TP3.png)
