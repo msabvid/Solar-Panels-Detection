@@ -16,3 +16,11 @@
 * Solar panels locations in aerial images of four cities in California: https://figshare.com/articles/Distributed_Solar_Photovoltaic_Array_Location_and_Extent_Data_Set_for_Remote_Sensing_Object_Identification/3385780
 * Sentinel-2 images https://scihub.copernicus.eu
 * OpenStreetMaps: shapefiles of different geographical features from Scotland: http://download.geofabrik.de/europe/great-britain.html
+
+## Results
+
+### True Positives examples
+![TP1](/images/TP1.png)
+![TP2](/images/TP2.png)
+![TP3](/images/TP3.png)
+![TP4](/images/TP4.png)
